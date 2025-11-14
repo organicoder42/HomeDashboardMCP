@@ -27,5 +27,17 @@ export const dashboardEntries = sqliteTable('dashboard_entries', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
+// Mood tracking table
+export const moodEntries = sqliteTable('mood_entries', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  mood: text('mood', { enum: ['struggling', 'difficult', 'okay', 'good', 'great'] }).notNull(),
+  note: text('note'), // Optional context note
+  energyLevel: integer('energy_level'), // 1-5 scale
+  tags: text('tags'), // JSON array of associated activities/contexts
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+});
+
 export type DashboardEntry = typeof dashboardEntries.$inferSelect;
 export type NewDashboardEntry = typeof dashboardEntries.$inferInsert;
+export type MoodEntry = typeof moodEntries.$inferSelect;
+export type NewMoodEntry = typeof moodEntries.$inferInsert;

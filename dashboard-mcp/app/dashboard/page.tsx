@@ -1,18 +1,61 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import DashboardEntries from '@/components/dashboard/dashboard-entries';
+import MoodPicker, { type MoodType } from '@/components/mood/mood-picker';
+import MoodHistory from '@/components/mood/mood-history';
+import type { MoodEntry } from '@/db/schema';
 
 export default function DashboardPage() {
   const [showInfo, setShowInfo] = useState(false);
+  const [showMoodPicker, setShowMoodPicker] = useState(false);
+  const [showMoodHistory, setShowMoodHistory] = useState(false);
+  const [moods, setMoods] = useState<MoodEntry[]>([]);
+  const [latestMood, setLatestMood] = useState<MoodEntry | null>(null);
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
+
+  useEffect(() => {
+    fetchMoods();
+  }, []);
+
+  async function fetchMoods() {
+    try {
+      const response = await fetch('/api/mood?limit=30');
+      if (response.ok) {
+        const data = await response.json();
+        setMoods(data);
+        if (data.length > 0) {
+          setLatestMood(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching moods:', error);
+    }
+  }
+
+  async function handleMoodSelect(mood: MoodType, note?: string, energyLevel?: number) {
+    try {
+      const response = await fetch('/api/mood', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mood, note, energyLevel }),
+      });
+      if (response.ok) {
+        setShowMoodPicker(false);
+        fetchMoods();
+      }
+    } catch (error) {
+      console.error('Error logging mood:', error);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -48,11 +91,93 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <p className="text-gray-700 text-sm flex items-center gap-2 bg-white/60 backdrop-blur rounded-xl px-4 py-3 border border-purple-200 shadow-sm">
-            <LucideIcons.Sparkles size={18} className="text-purple-600" />
-            Visual planner powered by MCP - Manage your tasks with Claude
-          </p>
+          <div className="flex items-center justify-between gap-4 mt-4">
+            <p className="text-gray-700 text-sm flex items-center gap-2 bg-white/60 backdrop-blur rounded-xl px-4 py-3 border border-purple-200 shadow-sm">
+              <LucideIcons.Sparkles size={18} className="text-purple-600" />
+              Visual planner powered by MCP - Manage your tasks with Claude
+            </p>
+
+            {/* Mood Check-in Button */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMoodHistory(!showMoodHistory)}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-pink-200 text-pink-700 font-medium"
+                title="View mood history"
+              >
+                <LucideIcons.Heart size={18} />
+                Moods
+              </button>
+              <button
+                onClick={() => setShowMoodPicker(!showMoodPicker)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+              >
+                <LucideIcons.Smile size={18} />
+                How are you?
+              </button>
+            </div>
+          </div>
         </motion.div>
+
+        {/* Mood Picker Modal */}
+        <AnimatePresence>
+          {showMoodPicker && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowMoodPicker(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoodPicker
+                  onMoodSelect={handleMoodSelect}
+                  onCancel={() => setShowMoodPicker(false)}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mood History Modal */}
+        <AnimatePresence>
+          {showMoodHistory && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowMoodHistory(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <LucideIcons.Heart className="text-pink-600" size={28} />
+                    Mood History
+                  </h2>
+                  <button
+                    onClick={() => setShowMoodHistory(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <LucideIcons.X size={20} />
+                  </button>
+                </div>
+                <MoodHistory moods={moods} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Info Card (Collapsible) */}
         {showInfo && (

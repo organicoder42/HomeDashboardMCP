@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { dashboardEntries } from '@/db/schema';
+import { dashboardEntries, moodEntries } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import type { McpServer } from 'mcp-handler';
 
@@ -509,6 +509,124 @@ export function registerMcpTools(server: McpServer) {
           content: [{
             type: 'text',
             text: `❌ Error reordering tasks: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 9: Log mood
+  server.tool(
+    'log_mood',
+    'Log your current mood with optional note and energy level. Helps track emotional patterns and well-being over time.',
+    z.object({
+      mood: z.enum(['struggling', 'difficult', 'okay', 'good', 'great']),
+      note: z.string().optional(),
+      energyLevel: z.number().int().min(1).max(5).optional(),
+      tags: z.array(z.string()).optional(),
+    }).shape,
+    async ({ mood, note, energyLevel, tags }) => {
+      try {
+        const tagsJson = tags ? JSON.stringify(tags) : null;
+
+        const [newMood] = await db.insert(moodEntries).values({
+          mood,
+          note,
+          energyLevel,
+          tags: tagsJson,
+        }).returning();
+
+        const moodEmojis = {
+          struggling: '😢',
+          difficult: '😟',
+          okay: '😐',
+          good: '🙂',
+          great: '😊',
+        };
+
+        return {
+          content: [{
+            type: 'text',
+            text: `${moodEmojis[mood]} Mood logged successfully!\n\nFeeling: ${mood.charAt(0).toUpperCase() + mood.slice(1)}${energyLevel ? `\nEnergy Level: ${energyLevel}/5` : ''}${note ? `\nNote: ${note}` : ''}\n\nTake care of yourself! 💜`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error logging mood: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 10: Get mood history
+  server.tool(
+    'get_mood_history',
+    'Retrieve mood check-in history with optional filtering by days or limit.',
+    z.object({
+      limit: z.number().int().positive().optional().default(10),
+      days: z.number().int().positive().optional(),
+    }).shape,
+    async ({ limit, days }) => {
+      try {
+        let query = db.select().from(moodEntries).orderBy(desc(moodEntries.createdAt));
+
+        // Filter by days if specified
+        if (days) {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - days);
+          query = query.where(desc(moodEntries.createdAt)) as any;
+        }
+
+        const moods = await query.limit(limit);
+
+        if (moods.length === 0) {
+          return {
+            content: [{
+              type: 'text',
+              text: '📭 No mood entries found.\n\nStart tracking your mood to see patterns over time!',
+            }],
+          };
+        }
+
+        const moodEmojis = {
+          struggling: '😢',
+          difficult: '😟',
+          okay: '😐',
+          good: '🙂',
+          great: '😊',
+        };
+
+        // Calculate stats
+        const moodCounts = moods.reduce((acc, entry) => {
+          acc[entry.mood] = (acc[entry.mood] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const mostCommon = Object.entries(moodCounts).sort(([, a], [, b]) => b - a)[0];
+        const avgEnergy = moods.filter(m => m.energyLevel).reduce((sum, m) => sum + (m.energyLevel || 0), 0) / moods.filter(m => m.energyLevel).length;
+
+        const moodsText = moods.map((entry) => {
+          return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${moodEmojis[entry.mood]} ${entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1)}
+${entry.energyLevel ? `Energy: ${entry.energyLevel}/5 ⚡` : ''}
+${entry.note ? `Note: ${entry.note}` : ''}
+Time: ${new Date(entry.createdAt).toLocaleString()}`;
+        }).join('\n');
+
+        return {
+          content: [{
+            type: 'text',
+            text: `📊 Mood History (Last ${moods.length} entries)\n\n📈 STATS\nMost Common: ${moodEmojis[mostCommon[0] as keyof typeof moodEmojis]} ${mostCommon[0]} (${mostCommon[1]} times)\nAverage Energy: ${avgEnergy ? avgEnergy.toFixed(1) : 'N/A'}/5\n\n${moodsText}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nKeep track of your patterns! 💜`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error retrieving mood history: ${error instanceof Error ? error.message : 'Unknown error'}`,
           }],
         };
       }
