@@ -290,4 +290,192 @@ export function registerMcpTools(server: McpServer) {
       }
     }
   );
+
+  // Tool 5: Start task timer
+  server.tool(
+    'start_task_timer',
+    'Start or resume the timer for a task. Tracks elapsed time for focus and productivity.',
+    z.object({
+      id: z.number().int().positive(),
+    }).shape,
+    async ({ id }) => {
+      try {
+        // Get current entry to check if timer exists
+        const [entry] = await db.select().from(dashboardEntries).where(eq(dashboardEntries.id, id));
+
+        if (!entry) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ Dashboard entry with ID ${id} not found.`,
+            }],
+          };
+        }
+
+        if (!entry.duration) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ Task "${entry.title}" has no duration set. Add a duration first.`,
+            }],
+          };
+        }
+
+        const timerState = {
+          running: true,
+          elapsed: 0,
+          startedAt: Date.now(),
+        };
+
+        await db
+          .update(dashboardEntries)
+          .set({
+            timerState: JSON.stringify(timerState),
+            status: 'in_progress',
+            updatedAt: new Date(),
+          })
+          .where(eq(dashboardEntries.id, id));
+
+        return {
+          content: [{
+            type: 'text',
+            text: `⏱️ Timer started for "${entry.title}"!\n\nDuration: ${entry.duration} minutes\nStatus: In Progress\n\nFocus on your task!`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error starting timer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 6: Pause task timer
+  server.tool(
+    'pause_task_timer',
+    'Pause the running timer for a task. You can resume it later.',
+    z.object({
+      id: z.number().int().positive(),
+    }).shape,
+    async ({ id }) => {
+      try {
+        const [entry] = await db.select().from(dashboardEntries).where(eq(dashboardEntries.id, id));
+
+        if (!entry) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ Dashboard entry with ID ${id} not found.`,
+            }],
+          };
+        }
+
+        const currentState = entry.timerState ? JSON.parse(entry.timerState) : null;
+        if (!currentState || !currentState.running) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ No running timer for "${entry.title}".`,
+            }],
+          };
+        }
+
+        const elapsed = currentState.elapsed + Math.floor((Date.now() - currentState.startedAt) / 1000);
+        const timerState = {
+          running: false,
+          elapsed,
+          pausedAt: Date.now(),
+        };
+
+        await db
+          .update(dashboardEntries)
+          .set({
+            timerState: JSON.stringify(timerState),
+            updatedAt: new Date(),
+          })
+          .where(eq(dashboardEntries.id, id));
+
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+
+        return {
+          content: [{
+            type: 'text',
+            text: `⏸️ Timer paused for "${entry.title}"\n\nElapsed: ${minutes}m ${seconds}s\nYou can resume anytime!`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error pausing timer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 7: Complete task with timer
+  server.tool(
+    'complete_task_timer',
+    'Mark a task as completed and stop its timer. Records completion time.',
+    z.object({
+      id: z.number().int().positive(),
+    }).shape,
+    async ({ id }) => {
+      try {
+        const [entry] = await db.select().from(dashboardEntries).where(eq(dashboardEntries.id, id));
+
+        if (!entry) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ Dashboard entry with ID ${id} not found.`,
+            }],
+          };
+        }
+
+        const now = new Date();
+        let elapsedText = '';
+
+        if (entry.timerState) {
+          const currentState = JSON.parse(entry.timerState);
+          const elapsed = currentState.running
+            ? currentState.elapsed + Math.floor((Date.now() - currentState.startedAt) / 1000)
+            : currentState.elapsed;
+
+          const minutes = Math.floor(elapsed / 60);
+          const seconds = elapsed % 60;
+          elapsedText = `\nTime spent: ${minutes}m ${seconds}s`;
+        }
+
+        await db
+          .update(dashboardEntries)
+          .set({
+            status: 'completed',
+            completedAt: now,
+            timerState: null,
+            updatedAt: now,
+          })
+          .where(eq(dashboardEntries.id, id));
+
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Congratulations! Task completed!\n\nTitle: "${entry.title}"${elapsedText}\nCompleted: ${now.toLocaleString()}\n\nGreat work! 🎉`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error completing task: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
 }

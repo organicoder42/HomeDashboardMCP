@@ -20,6 +20,7 @@ export const dashboardEntries = sqliteTable('dashboard_entries', {
   startTime: integer('start_time', { mode: 'timestamp' }), // Optional scheduled start time
   endTime: integer('end_time', { mode: 'timestamp' }), // Optional scheduled end time
   completedAt: integer('completed_at', { mode: 'timestamp' }), // When task was completed
+  timerState: text('timer_state'), // JSON: {running: boolean, elapsed: number, pausedAt: timestamp}
 
   // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),

@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import type { DashboardEntry } from '@/db/schema';
 import { formatDistanceToNow } from 'date-fns';
+import CountdownTimer from '@/components/timer/countdown-timer';
+import { useState } from 'react';
 
 interface TaskCardProps {
   entry: DashboardEntry;
@@ -12,6 +14,7 @@ interface TaskCardProps {
 
 export default function TaskCard({ entry, isDragging = false }: TaskCardProps) {
   const tags = entry.tags ? JSON.parse(entry.tags) : [];
+  const [showTimer, setShowTimer] = useState(false);
 
   // Get icon component dynamically
   const IconComponent = (LucideIcons as any)[
@@ -141,6 +144,39 @@ export default function TaskCard({ entry, isDragging = false }: TaskCardProps) {
                   #{tag}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Timer Section */}
+          {entry.duration && entry.status !== 'completed' && (
+            <div className="mb-3">
+              {showTimer ? (
+                <div className="bg-white/80 rounded-xl p-3 border border-gray-300">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-gray-700">Focus Timer</span>
+                    <button
+                      onClick={() => setShowTimer(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <LucideIcons.X size={14} />
+                    </button>
+                  </div>
+                  <CountdownTimer
+                    duration={entry.duration}
+                    color={entry.color || '#3B82F6'}
+                    compact={true}
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowTimer(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white/80 hover:bg-white rounded-lg text-xs font-medium transition-all border border-gray-300 hover:border-gray-400"
+                  style={{ color: entry.color || '#3B82F6' }}
+                >
+                  <LucideIcons.Timer size={14} />
+                  Start {entry.duration}m timer
+                </button>
+              )}
             </div>
           )}
 

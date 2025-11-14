@@ -6,6 +6,7 @@ import * as LucideIcons from 'lucide-react';
 import type { DashboardEntry } from '@/db/schema';
 import TimelineView from './timeline-view';
 import TaskCard from './task-card';
+import DailyProgress from '@/components/widgets/daily-progress';
 
 export default function DashboardEntries() {
   const [entries, setEntries] = useState<DashboardEntry[]>([]);
@@ -67,11 +68,19 @@ export default function DashboardEntries() {
 
   return (
     <div className="space-y-6">
+      {/* Daily Progress Widget */}
+      <DailyProgress
+        total={stats.total}
+        completed={stats.completed}
+        inProgress={stats.inProgress}
+        pending={stats.pending}
+      />
+
       {/* Stats Dashboard */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
       >
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border-2 border-blue-200">
           <div className="flex items-center gap-3">
