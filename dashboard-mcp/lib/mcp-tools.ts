@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { dashboardEntries, moodEntries } from '@/db/schema';
+import { dashboardEntries, moodEntries, userPreferences } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import type { McpServer } from 'mcp-handler';
 
@@ -627,6 +627,112 @@ Time: ${new Date(entry.createdAt).toLocaleString()}`;
           content: [{
             type: 'text',
             text: `❌ Error retrieving mood history: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 11: Get user preferences
+  server.tool(
+    'get_user_preferences',
+    'Retrieve the current user preferences including theme, font size, and accessibility settings.',
+    z.object({}).shape,
+    async () => {
+      try {
+        const DEFAULT_USER_ID = 'default';
+        const [prefs] = await db
+          .select()
+          .from(userPreferences)
+          .where(eq(userPreferences.userId, DEFAULT_USER_ID))
+          .limit(1);
+
+        if (!prefs) {
+          return {
+            content: [{
+              type: 'text',
+              text: `⚙️ No preferences set yet. Using defaults:\n\n🎨 Theme: Light\n📏 Font Size: Medium\n📖 Dyslexic Font: Off\n♿ Accessibility: Standard\n\nYou can customize these settings using update_user_preferences tool.`,
+            }],
+          };
+        }
+
+        const themeEmojis = { light: '☀️', dark: '🌙', 'high-contrast': '🔲' };
+        const fontEmojis = { small: '🔤', medium: '🔡', large: '🔠', 'x-large': '🅰️' };
+
+        return {
+          content: [{
+            type: 'text',
+            text: `⚙️ Current User Preferences\n\n🎨 Theme: ${themeEmojis[prefs.theme as keyof typeof themeEmojis]} ${prefs.theme}\n📏 Font Size: ${fontEmojis[prefs.fontSize as keyof typeof fontEmojis]} ${prefs.fontSize}\n📖 Dyslexic Font: ${prefs.useDyslexicFont ? '✓ Enabled' : '✗ Disabled'}\n\n♿ Accessibility Features:\n${prefs.reducedMotion ? '✓' : '✗'} Reduced Motion\n${prefs.highContrast ? '✓' : '✗'} High Contrast Mode\n${prefs.screenReaderOptimized ? '✓' : '✗'} Screen Reader Optimized\n\n💡 Use update_user_preferences to change these settings.`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error retrieving preferences: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // Tool 12: Update user preferences
+  server.tool(
+    'update_user_preferences',
+    'Update user preferences for theme, font size, and accessibility features. Helps customize the dashboard experience for neurodivergent users.',
+    z.object({
+      theme: z.enum(['light', 'dark', 'high-contrast']).optional(),
+      fontSize: z.enum(['small', 'medium', 'large', 'x-large']).optional(),
+      useDyslexicFont: z.boolean().optional(),
+      reducedMotion: z.boolean().optional(),
+      highContrast: z.boolean().optional(),
+      screenReaderOptimized: z.boolean().optional(),
+    }).shape,
+    async (updates) => {
+      try {
+        const DEFAULT_USER_ID = 'default';
+
+        // Ensure preferences exist
+        const [existing] = await db
+          .select()
+          .from(userPreferences)
+          .where(eq(userPreferences.userId, DEFAULT_USER_ID))
+          .limit(1);
+
+        let result;
+        if (!existing) {
+          // Create new preferences
+          [result] = await db
+            .insert(userPreferences)
+            .values({
+              userId: DEFAULT_USER_ID,
+              ...updates,
+            })
+            .returning();
+        } else {
+          // Update existing
+          [result] = await db
+            .update(userPreferences)
+            .set({
+              ...updates,
+              updatedAt: new Date(),
+            })
+            .where(eq(userPreferences.userId, DEFAULT_USER_ID))
+            .returning();
+        }
+
+        const changedFields = Object.keys(updates).join(', ');
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Preferences updated successfully!\n\nUpdated: ${changedFields}\n\n🎨 Current Settings:\nTheme: ${result.theme}\nFont Size: ${result.fontSize}\nDyslexic Font: ${result.useDyslexicFont ? 'On' : 'Off'}\n\nThe changes will take effect immediately in the dashboard! 🚀`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error updating preferences: ${error instanceof Error ? error.message : 'Unknown error'}`,
           }],
         };
       }

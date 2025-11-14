@@ -37,7 +37,32 @@ export const moodEntries = sqliteTable('mood_entries', {
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
+// User preferences table
+export const userPreferences = sqliteTable('user_preferences', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').default('default').notNull(), // For future multi-user support
+
+  // Theme & Appearance
+  theme: text('theme', { enum: ['light', 'dark', 'high-contrast'] }).default('light'),
+  fontSize: text('font_size', { enum: ['small', 'medium', 'large', 'x-large'] }).default('medium'),
+  useDyslexicFont: integer('use_dyslexic_font', { mode: 'boolean' }).default(false),
+
+  // Widget Layout (JSON array of widget configs)
+  widgetLayout: text('widget_layout'), // JSON: [{id, position, visible, size}, ...]
+
+  // Accessibility
+  reducedMotion: integer('reduced_motion', { mode: 'boolean' }).default(false),
+  highContrast: integer('high_contrast', { mode: 'boolean' }).default(false),
+  screenReaderOptimized: integer('screen_reader_optimized', { mode: 'boolean' }).default(false),
+
+  // Timestamps
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+});
+
 export type DashboardEntry = typeof dashboardEntries.$inferSelect;
 export type NewDashboardEntry = typeof dashboardEntries.$inferInsert;
 export type MoodEntry = typeof moodEntries.$inferSelect;
 export type NewMoodEntry = typeof moodEntries.$inferInsert;
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type NewUserPreference = typeof userPreferences.$inferInsert;

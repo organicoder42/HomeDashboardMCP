@@ -64,6 +64,9 @@ export default function TaskCard({ entry, isDragging = false, onFocus, onStatusC
     }
   };
 
+  const statusText = entry.status?.replace('_', ' ') || 'pending';
+  const priorityText = entry.priority || 'medium';
+
   return (
     <motion.div
       layout
@@ -78,6 +81,9 @@ export default function TaskCard({ entry, isDragging = false, onFocus, onStatusC
         borderLeftWidth: '6px',
         borderLeftColor: entry.color || '#3B82F6',
       }}
+      role="article"
+      aria-label={`Task: ${entry.title}. Status: ${statusText}. Priority: ${priorityText}. ${entry.content}`}
+      tabIndex={0}
     >
       {/* Color indicator bar */}
       <div
@@ -160,8 +166,9 @@ export default function TaskCard({ entry, isDragging = false, onFocus, onStatusC
                     <button
                       onClick={() => setShowTimer(false)}
                       className="text-gray-500 hover:text-gray-700"
+                      aria-label="Close timer"
                     >
-                      <LucideIcons.X size={14} />
+                      <LucideIcons.X size={14} aria-hidden="true" />
                     </button>
                   </div>
                   <CountdownTimer
@@ -175,8 +182,9 @@ export default function TaskCard({ entry, isDragging = false, onFocus, onStatusC
                   onClick={() => setShowTimer(true)}
                   className="flex items-center gap-2 px-3 py-2 bg-white/80 hover:bg-white rounded-lg text-xs font-medium transition-all border border-gray-300 hover:border-gray-400"
                   style={{ color: entry.color || '#3B82F6' }}
+                  aria-label={`Start ${entry.duration} minute timer for ${entry.title}`}
                 >
-                  <LucideIcons.Timer size={14} />
+                  <LucideIcons.Timer size={14} aria-hidden="true" />
                   Start {entry.duration}m timer
                 </button>
               )}
@@ -209,52 +217,58 @@ export default function TaskCard({ entry, isDragging = false, onFocus, onStatusC
               <button
                 onClick={onFocus}
                 className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                aria-label={`Enter focus mode for ${entry.title}`}
                 title="Focus Mode"
               >
-                <LucideIcons.Focus size={16} className="text-purple-600" />
+                <LucideIcons.Focus size={16} className="text-purple-600" aria-hidden="true" />
               </button>
             )}
             {entry.status !== 'completed' && onStatusChange && (
               <button
                 onClick={() => onStatusChange('completed')}
                 className="p-2 hover:bg-green-50 rounded-lg transition-colors"
+                aria-label={`Mark ${entry.title} as complete`}
                 title="Mark Complete"
               >
-                <LucideIcons.CheckCircle2 size={16} className="text-green-600" />
+                <LucideIcons.CheckCircle2 size={16} className="text-green-600" aria-hidden="true" />
               </button>
             )}
             {entry.status === 'pending' && onStatusChange && (
               <button
                 onClick={() => onStatusChange('in_progress')}
                 className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                aria-label={`Start task ${entry.title}`}
                 title="Start Task"
               >
-                <LucideIcons.Play size={16} className="text-blue-600" />
+                <LucideIcons.Play size={16} className="text-blue-600" aria-hidden="true" />
               </button>
             )}
             {entry.status === 'in_progress' && onStatusChange && (
               <button
                 onClick={() => onStatusChange('pending')}
                 className="p-2 hover:bg-yellow-50 rounded-lg transition-colors"
+                aria-label={`Pause task ${entry.title}`}
                 title="Pause Task"
               >
-                <LucideIcons.Pause size={16} className="text-yellow-600" />
+                <LucideIcons.Pause size={16} className="text-yellow-600" aria-hidden="true" />
               </button>
             )}
             <button
               onClick={() => setShowActions(false)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close quick actions menu"
             >
-              <LucideIcons.X size={16} className="text-gray-600" />
+              <LucideIcons.X size={16} className="text-gray-600" aria-hidden="true" />
             </button>
           </motion.div>
         ) : (
           <button
             onClick={() => setShowActions(true)}
             className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white rounded-lg"
+            aria-label={`Open quick actions for ${entry.title}`}
             title="Quick Actions"
           >
-            <LucideIcons.MoreVertical size={20} className="text-gray-600" />
+            <LucideIcons.MoreVertical size={20} className="text-gray-600" aria-hidden="true" />
           </button>
         )}
       </div>

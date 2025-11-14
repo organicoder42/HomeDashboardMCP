@@ -1,8 +1,49 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap');
 
-:root {
+/* Light Theme (Default) */
+:root[data-theme="light"] {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --secondary: #ec4899;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f0f9ff;
+  --destructive: #ef4444;
+}
+
+/* Dark Theme */
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-bg: #1a1a1a;
+  --card-border: #2a2a2a;
+  --primary: #a78bfa;
+  --primary-hover: #8b5cf6;
+  --secondary: #f472b6;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #1e293b;
+  --destructive: #f87171;
+}
+
+/* High Contrast Theme */
+:root[data-theme="high-contrast"] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card-bg: #000000;
+  --card-border: #ffffff;
+  --primary: #ffff00;
+  --primary-hover: #ffed4e;
+  --secondary: #00ffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #ffffff;
+  --accent: #ffffff;
+  --destructive: #ff0000;
 }
 
 @theme inline {
@@ -12,15 +53,83 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Font Size Controls */
+:root[data-font-size="small"] {
+  --base-font-size: 0.875rem; /* 14px */
+  --heading-scale: 1.2;
 }
 
+:root[data-font-size="medium"] {
+  --base-font-size: 1rem; /* 16px */
+  --heading-scale: 1.25;
+}
+
+:root[data-font-size="large"] {
+  --base-font-size: 1.125rem; /* 18px */
+  --heading-scale: 1.3;
+}
+
+:root[data-font-size="x-large"] {
+  --base-font-size: 1.25rem; /* 20px */
+  --heading-scale: 1.4;
+}
+
+/* Dyslexic Font Support */
+.dyslexic-font,
+.dyslexic-font * {
+  font-family: 'OpenDyslexic', Arial, Helvetica, sans-serif !important;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.8;
+}
+
+/* Reduced Motion */
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* High Contrast Mode Enhancements */
+.high-contrast {
+  --card-bg: #000000;
+  --card-border: #ffffff;
+}
+
+.high-contrast * {
+  border-width: 2px !important;
+}
+
+.high-contrast button,
+.high-contrast a {
+  text-decoration: underline;
+}
+
+/* Base Body Styles */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-size: var(--base-font-size, 1rem);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Focus Visible for Keyboard Navigation */
+*:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

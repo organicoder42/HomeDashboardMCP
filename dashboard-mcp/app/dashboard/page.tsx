@@ -6,12 +6,14 @@ import * as LucideIcons from 'lucide-react';
 import DashboardEntries from '@/components/dashboard/dashboard-entries';
 import MoodPicker, { type MoodType } from '@/components/mood/mood-picker';
 import MoodHistory from '@/components/mood/mood-history';
+import SettingsPanel from '@/components/settings/settings-panel';
 import type { MoodEntry } from '@/db/schema';
 
 export default function DashboardPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showMoodHistory, setShowMoodHistory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [moods, setMoods] = useState<MoodEntry[]>([]);
   const [latestMood, setLatestMood] = useState<MoodEntry | null>(null);
 
@@ -82,13 +84,23 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowInfo(!showInfo)}
-              className="flex items-center gap-2 px-5 py-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-purple-200 text-purple-700 font-medium"
-            >
-              <LucideIcons.Info size={20} />
-              {showInfo ? 'Hide' : 'Show'} MCP Info
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="flex items-center gap-2 px-5 py-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-purple-200 text-purple-700 font-medium"
+                aria-label="Open settings"
+              >
+                <LucideIcons.Settings size={20} />
+                Settings
+              </button>
+              <button
+                onClick={() => setShowInfo(!showInfo)}
+                className="flex items-center gap-2 px-5 py-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-purple-200 text-purple-700 font-medium"
+              >
+                <LucideIcons.Info size={20} />
+                {showInfo ? 'Hide' : 'Show'} MCP Info
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-4 mt-4">
@@ -102,16 +114,18 @@ export default function DashboardPage() {
               <button
                 onClick={() => setShowMoodHistory(!showMoodHistory)}
                 className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-pink-200 text-pink-700 font-medium"
+                aria-label="View mood check-in history"
                 title="View mood history"
               >
-                <LucideIcons.Heart size={18} />
+                <LucideIcons.Heart size={18} aria-hidden="true" />
                 Moods
               </button>
               <button
                 onClick={() => setShowMoodPicker(!showMoodPicker)}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+                aria-label="Log how you're feeling"
               >
-                <LucideIcons.Smile size={18} />
+                <LucideIcons.Smile size={18} aria-hidden="true" />
                 How are you?
               </button>
             </div>
@@ -174,6 +188,29 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <MoodHistory moods={moods} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Settings Modal */}
+        <AnimatePresence>
+          {showSettings && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowSettings(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-white rounded-2xl p-8 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <SettingsPanel onClose={() => setShowSettings(false)} />
               </motion.div>
             </motion.div>
           )}
