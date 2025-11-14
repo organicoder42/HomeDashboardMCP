@@ -10,11 +10,14 @@ import { useState } from 'react';
 interface TaskCardProps {
   entry: DashboardEntry;
   isDragging?: boolean;
+  onFocus?: () => void;
+  onStatusChange?: (newStatus: string) => void;
 }
 
-export default function TaskCard({ entry, isDragging = false }: TaskCardProps) {
+export default function TaskCard({ entry, isDragging = false, onFocus, onStatusChange }: TaskCardProps) {
   const tags = entry.tags ? JSON.parse(entry.tags) : [];
   const [showTimer, setShowTimer] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   // Get icon component dynamically
   const IconComponent = (LucideIcons as any)[
@@ -194,8 +197,70 @@ export default function TaskCard({ entry, isDragging = false }: TaskCardProps) {
         </div>
       </div>
 
+      {/* Quick Actions - Top Right */}
+      <div className="absolute top-3 right-3">
+        {showActions ? (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-center gap-1 bg-white rounded-xl shadow-lg p-1 border-2 border-gray-300"
+          >
+            {onFocus && entry.status !== 'completed' && (
+              <button
+                onClick={onFocus}
+                className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                title="Focus Mode"
+              >
+                <LucideIcons.Focus size={16} className="text-purple-600" />
+              </button>
+            )}
+            {entry.status !== 'completed' && onStatusChange && (
+              <button
+                onClick={() => onStatusChange('completed')}
+                className="p-2 hover:bg-green-50 rounded-lg transition-colors"
+                title="Mark Complete"
+              >
+                <LucideIcons.CheckCircle2 size={16} className="text-green-600" />
+              </button>
+            )}
+            {entry.status === 'pending' && onStatusChange && (
+              <button
+                onClick={() => onStatusChange('in_progress')}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Start Task"
+              >
+                <LucideIcons.Play size={16} className="text-blue-600" />
+              </button>
+            )}
+            {entry.status === 'in_progress' && onStatusChange && (
+              <button
+                onClick={() => onStatusChange('pending')}
+                className="p-2 hover:bg-yellow-50 rounded-lg transition-colors"
+                title="Pause Task"
+              >
+                <LucideIcons.Pause size={16} className="text-yellow-600" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowActions(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LucideIcons.X size={16} className="text-gray-600" />
+            </button>
+          </motion.div>
+        ) : (
+          <button
+            onClick={() => setShowActions(true)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white rounded-lg"
+            title="Quick Actions"
+          >
+            <LucideIcons.MoreVertical size={20} className="text-gray-600" />
+          </button>
+        )}
+      </div>
+
       {/* Drag handle indicator */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-40 transition-opacity">
+      <div className="absolute top-3 right-12 opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none">
         <LucideIcons.GripVertical size={20} className="text-gray-600" />
       </div>
     </motion.div>

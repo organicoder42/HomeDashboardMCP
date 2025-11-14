@@ -91,9 +91,31 @@ export default function TimelineView({ entries }: TimelineViewProps) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      // In a real implementation, update the order via MCP
-      console.log('Reorder:', active.id, 'to', over.id);
-      // TODO: Call MCP reorder_tasks tool
+      // Calculate new order based on position
+      const oldIndex = sortedEntries.findIndex(e => e.id === active.id);
+      const newIndex = sortedEntries.findIndex(e => e.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // Create new array with reordered items
+        const reorderedEntries = [...sortedEntries];
+        const [movedItem] = reorderedEntries.splice(oldIndex, 1);
+        reorderedEntries.splice(newIndex, 0, movedItem);
+
+        // Update order values and send to API
+        const updates = reorderedEntries.map((entry, index) => ({
+          id: entry.id,
+          order: index,
+        }));
+
+        // Call API to update order
+        fetch('/api/entries/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates }),
+        }).catch(error => {
+          console.error('Error reordering tasks:', error);
+        });
+      }
     }
 
     setActiveId(null);

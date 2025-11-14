@@ -478,4 +478,40 @@ export function registerMcpTools(server: McpServer) {
       }
     }
   );
+
+  // Tool 8: Reorder tasks
+  server.tool(
+    'reorder_tasks',
+    'Reorder tasks by providing an array of task IDs in the desired order. Updates the order field for all tasks.',
+    z.object({
+      taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+    }).shape,
+    async ({ taskIds }) => {
+      try {
+        // Update each task's order based on its position in the array
+        await Promise.all(
+          taskIds.map((id, index) =>
+            db
+              .update(dashboardEntries)
+              .set({ order: index, updatedAt: new Date() })
+              .where(eq(dashboardEntries.id, id))
+          )
+        );
+
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Tasks reordered successfully!\n\nReordered ${taskIds.length} tasks.\nNew order: ${taskIds.join(', ')}`,
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error reordering tasks: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          }],
+        };
+      }
+    }
+  );
 }
