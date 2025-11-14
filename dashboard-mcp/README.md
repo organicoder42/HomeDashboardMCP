@@ -334,12 +334,48 @@ Dashboard auto-refresher hvert 5. sekund. Hvis entries ikke vises:
 - **Quick Logging**: Log events eller metrics via MCP
 - **Team Dashboard**: Del dashboard URL, skriv via MCP
 
-## Security Notes
+## Security
 
-- Ingen authentication på MCP endpoint som standard
-- Tilføj auth hvis deployed publicly
-- Turso auth tokens skal holdes hemmelige
-- `.env.local` er gitignored automatisk
+### 🔐 HTTP MCP Endpoint Authentication
+
+HTTP MCP endpoint (`/api/mcp`) er **beskyttet med API key authentication** i production.
+
+**Setup:**
+
+1. Generér en sikker API key:
+```bash
+openssl rand -base64 32
+```
+
+2. Tilføj til Vercel Environment Variables:
+   - **Name:** `MCP_API_KEY`
+   - **Value:** Din genererede API key
+
+3. Brug API key når du forbinder:
+```bash
+# Claude Code med authentication
+claude --mcp https://your-app.vercel.app/api/mcp \
+  --header "X-API-Key: your-api-key"
+
+# Curl eksempel
+curl https://your-app.vercel.app/api/mcp \
+  -H "X-API-Key: your-api-key" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+```
+
+**Development Mode:**
+- Authentication er **disabled** i development (`npm run dev`)
+- Ingen API key nødvendig for lokal test
+
+**📖 Se [SECURITY.md](./SECURITY.md) for detaljeret security guide**
+
+### Vigtige Security Notes
+
+- ✅ HTTP MCP endpoint har API key authentication (production)
+- ✅ Turso database kræver auth token
+- ✅ Alle environment variables er gitignored
+- ⚠️ Dashboard UI (`/dashboard`) er public (read-only)
+- ⚠️ Entries API (`/api/entries`) er public (read-only)
 
 ## Performance
 
