@@ -9,6 +9,19 @@ export const dashboardEntries = sqliteTable('dashboard_entries', {
   priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).default('medium'),
   category: text('category'),
   tags: text('tags'), // JSON string of tags array
+
+  // Tiimo-inspired visual fields
+  color: text('color').default('#3B82F6'), // Hex color for visual coding
+  icon: text('icon').default('circle'), // Icon name from lucide-react
+  order: integer('order').default(0), // Sequence order for drag-and-drop
+
+  // Time management fields
+  duration: integer('duration'), // Estimated duration in minutes
+  startTime: integer('start_time', { mode: 'timestamp' }), // Optional scheduled start time
+  endTime: integer('end_time', { mode: 'timestamp' }), // Optional scheduled end time
+  completedAt: integer('completed_at', { mode: 'timestamp' }), // When task was completed
+
+  // Timestamps
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
